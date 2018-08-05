@@ -1,0 +1,96 @@
+#!/usr/bin/env/python
+
+from __future__ import division
+
+import numpy as np
+import cv2
+from PIL import Image
+from matplotlib import pyplot as plt
+from skimage import feature
+from skimage.feature import local_binary_pattern
+import math
+
+import time
+start = time.clock()
+
+def LBP_HOG(LBP_TrainPos):
+    img = LBP_TrainPos.astype('uint8')
+    """
+    fd,hog_image = feature.hog(img, orientations=9, pixels_per_cell=(8, 8), cells_per_block=(2, 2), visualise=True, transform_sqrt=True, feature_vector=True)
+
+    plt.figure()
+    plt.subplot(121)
+    plt.title('LBP')
+    plt.imshow(img,cmap='gray')
+    plt.subplot(122)
+    plt.title('LBP-HOG')
+    plt.imshow(hog_image)
+    plt.show()
+    """
+    cell_size = (8, 8)  
+    block_size = (2, 2)  
+    nbins = 9    
+    hog = cv2.HOGDescriptor(_winSize=(img.shape[1] // cell_size[1] * cell_size[1],
+                             img.shape[0] // cell_size[0] * cell_size[0]),
+                   _blockSize=(block_size[1] * cell_size[1],
+                               block_size[0] * cell_size[0]),
+                   _blockStride=(cell_size[1], cell_size[0]),
+                   _cellSize=(cell_size[1], cell_size[0]),
+                   _nbins=nbins)
+    n_cells = (img.shape[0] // cell_size[0], img.shape[1] // cell_size[1]) 
+    lbphog_feats = hog.compute(img)
+    """.reshape(n_cells[1] - block_size[1] + 1 ,
+                                             n_cells[0] - block_size[0] + 1 ,
+                        block_size[0], block_size[1], nbins) \
+               .transpose((1, 0, 2, 3, 4))
+    """
+    return lbphog_feats
+     
+            
+def lbphog_Pos(TrainPosImageDate):
+    LBPHOG_TrainPos = []
+    for i in TrainPosImageDate[:]:
+        img = i
+        sx,sy = img.shape
+        print img.shape
+        cellx,celly= 8,8
+        n_cellsx,n_cellsy = sx//cellx, sy//celly
+        LBP_TrainPos = np.zeros((sx,sy), dtype=float)
+        for k in range(n_cellsx):
+            for j in range(n_cellsy):
+                cells = img[k*cellx:(k+1)*cellx , j*celly:(j+1)*celly]
+    
+                LBP = local_binary_pattern(cells,8, 1,method='uniform').astype('uint8')
+                
+                LBP_TrainPos[k*cellx:(k+1)*cellx,j*celly:(j+1)*celly] += LBP
+                
+        print LBP_TrainPos
+        #print LBP_TrainPos.shape,LBP_TrainPos.dtype
+        #LBP_HOG(LBP_TrainPos)
+        
+        lbphog_feats = LBP_HOG(LBP_TrainPos)
+        LBPHOG_TrainPos.append(lbphog_feats)
+
+    return LBPHOG_TrainPos
+
+   
+
+ 
+
+if __name__ == "__main__":
+
+    
+    TrainPosImageDate = np.load('~/load_img/INRIA_TrainPosImageDate.npy')
+    
+    #lbphog_Pos(TrainPosImageDate)
+    lbpHog_TrainPos = lbphog_Pos(TrainPosImageDate)
+    LbpHog_TrainPos=np.save('~/LBPHOG_TrainPos.npy', lbpHog_TrainPos)
+
+    
+    
+    
+              
+end = time.clock()
+print('Running time: %s Seconds'%(end-start))
+
+
