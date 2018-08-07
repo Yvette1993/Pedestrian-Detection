@@ -1,0 +1,47 @@
+#!/usr/bin/python
+#!coding:utf8 
+from __future__ import print_function
+import os
+from PIL import Image
+import matplotlib.pyplot as plt
+import numpy as np
+
+import time
+start = time.clock()
+
+def load_img1(Path, FileName1, img_lst1):
+   
+    src1 = os.path.join(Path, FileName1)
+    file1 = (open(src1,'r'))
+    if(file1 == ''):
+        print ('Faild to open file :' ,FileName1 )
+        exit()
+       
+    for eachLine in file1.readlines():
+        try:
+            eachLine == ''
+                    
+        except IOError:
+            print ("end of eachLine ")
+            exit()
+        else:   
+                
+            img_scr1 = os.path.join(Path, eachLine[:-1])
+            img1 = Image.open(img_scr1).convert('L')
+            width = 64
+            height = 128
+            new_img1 = img1.resize((width,height))
+            img_lst1.append(np.array(new_img1))
+
+    file1.close()
+    INRIA_TestImageDate=np.save('~/load_img/INRIA_TestPosImageDate.npy',img_lst1)
+    return img_lst1
+f __name__ == "__main__":
+
+    Path = "~/INRIAPerson/test/"  
+    FileName1 = "pos.lst"
+    img_lst1 = []
+    load_img1(Path, FileName1, img_lst1)
+      
+end = time.clock()
+print('Running time:%s Seconds'%(end-start))
