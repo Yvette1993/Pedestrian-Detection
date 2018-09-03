@@ -1,0 +1,379 @@
+#from __future__ import print_function
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+import math
+from _init_ import *
+from numpy import *
+import time
+start = time.clock()
+        
+
+def DataWeightInit(cpf_LEARN):
+    for i in range(len(TrainFILE)):
+        cpf_LEARN.m_weight.append(1.0/(len(TrainFILE)))
+    print cpf_LEARN.m_weight[2],cpf_LEARN.m_weight[900]
+
+def weak_classifier(number,count,Poslut,Neglut):
+    tmp = int(cpf_LEARN.m_feature[count][number] * BIN)
+    if tmp >= BIN :
+        tmp = BIN -1
+    h = 0.5 * math.log((Poslut[tmp] + EPSILON)/(Neglut[tmp] + EPSILON))
+    return h
+
+def AssessedValue(Poslut, Neglut):
+    #print Poslut,Neglut
+    c = 0.0
+    for i in range(BIN):
+        w = float(Poslut[i] * Neglut[i])
+        #print w
+        c += np.sqrt(w)
+    c = 2.0 * c
+    #print c
+    return c                      
+def SmoothingLUT(Poslut ,Neglut):
+    Poslut2 = []
+    Neglut2 = []
+    for i in range(BIN):
+        Poslut2.append(Poslut[i])
+        Neglut2.append(Neglut[i])
+    #print Poslut2
+    for i in range(BIN):
+        if i == 0 :
+            Poslut[i] = (Poslut2[i] + Poslut2[i+1]) / 2.0
+            Neglut[i] = (Neglut2[i] + Neglut2[i+1]) / 2.0
+        elif i == 1 :
+            Poslut[i] = (Poslut2[i-1] + Poslut2[i] + Poslut2[i+1] + Poslut2[i+2]) / 4.0
+	    Neglut[i] = (Neglut2[i-1] + Neglut2[i] + Neglut2[i+1] + Neglut2[i+2]) / 4.0
+        elif i == (BIN - 1) :
+            Poslut[i] = ( Poslut2[i-1] +  Poslut2[i]) / 2.0
+	    Neglut[i] = ( Neglut2[i-1] +  Neglut2[i]) / 2.0
+        elif i == (BIN - 2) :
+            Poslut[i] = (Poslut2[i-2] + Poslut2[i-1] + Poslut2[i] + Poslut2[i+1]) / 4.0
+	    Neglut[i] = (Neglut2[i-2] + Neglut2[i-1] + Neglut2[i] + Neglut2[i+1]) / 4.0
+        else :
+            Poslut[i] = (Poslut2[i-2] + Poslut2[i-1] + Poslut2[i] + Poslut2[i+1] + Poslut2[i+2]) / 5.0
+	    Neglut[i] = (Neglut2[i-2] + Neglut2[i-1] + Neglut2[i] + Neglut2[i+1] + Neglut2[i+2]) / 5.0
+   
+
+def Comp_Hist(Poslut ,Neglut ,cpf_LEARN ,number ):
+    sump = sumn = 0.0
+    Poslut = np.zeros(64)
+    Neglut = np.zeros(64)
+    
+    for i in range(BIN):
+        Poslut[i] = 0.0
+        Neglut[i] = 0.0
+    for i in range(len(TrainFILE)):
+        tmp = int(cpf_LEARN.m_feature[i][number] * BIN)
+        #print tmp
+        if tmp >= BIN:
+            tmp = BIN - 1
+        if i < len(TrainPOS):
+            Poslut[tmp] += cpf_LEARN.m_weight[i]
+            
+        else :
+            Neglut[tmp] += cpf_LEARN.m_weight[i]
+    
+    SmoothingLUT(Poslut ,Neglut)
+    
+    for i in range(BIN):
+        sump += Poslut[i]
+        sumn += Neglut[i]
+    for i in range(BIN):
+        Poslut[i] = Poslut[i]/sump
+        Neglut[i] = Neglut[i]/sumn
+    return  Poslut,Neglut
+   
+    
+# SelectCPF
+def SelectCF(cpf_LEARN,Poslut,Neglut):
+    
+    e =[]
+    for i in range(FEATURE):
+        cpf_LEARN.Poslut,cpf_LEARN.Neglut = Comp_Hist(Poslut ,Neglut ,cpf_LEARN ,i )
+        
+        #print cpf_LEARN.Poslut,cpf_LEARN.Neglut
+        z = AssessedValue(cpf_LEARN.Poslut, cpf_LEARN.Neglut)
+        #print z
+        e.append(z)
+        
+    key = range(FEATURE)
+    value = e
+    d = dict(zip(key,value))
+    alpha = sorted(d.iteritems(),key=lambda d:d[1],reverse=False)[0:200]
+    #print alpha
+
+    HOGNumber = 0
+    LBPHOGNumber = 0
+    CF = []
+    for i in alpha[:]:
+        v = i[0]
+        #b = i[1]
+        cpf_LEARN.Poslut,cpf_LEARN.Neglut=Comp_Hist(Poslut ,Neglut ,cpf_LEARN ,v )
+        #print cpf_LEARN.Poslut,cpf_LEARN.Neglut
+        h = []
+        for j in range(len(TrainFILE)):
+            f = weak_classifier(v,j,cpf_LEARN.Poslut,cpf_LEARN.Neglut)
+            #print f
+            h.append(f)
+
+        key = range(len(TrainFILE))
+        value = h
+        d = dict(zip(key,value))
+        alpha = sorted(d.iteritems(),key=lambda d:d[1],reverse=False)[0]
+        y = alpha[0]
+
+        
+
+        ret_list = list(set(range(len(HOGPOS))).union(set(range(len(TrainPOS),len(TrainPOS)+len(HOGTrainNeg)))))
+        if y in ret_list:
+            HOGNumber += 1
+        else:
+            LBPHOGNumber += 1
+    print ('HOGNumber = %s'%HOGNumber)
+    print ('LBPHOGNumber = %s'%LBPHOGNumber)
+
+    HOGRATE = HOGNumber/len(alpha)
+    LBPHOGRATE = LBPHOGNumber/len(alpha)
+    
+    #HOGRATE.append(HOGNumber/len(alpha))
+    #LBPHOGRATE.append(LBPHOGNumber/len(alpha))
+    
+    print ('HOGRATE = %s'%HOGRATE )
+    print ('LBPHOGRATE = %s'%LBPHOGRATE )
+
+    #np.save('/home/yingyingli/paper2/code/CPF/HOGRate.npy',HOGRATE)
+    #np.save('/home/yingyingli/paper2/code/CPF/HOGRate.npy',LBPHOGRATE)
+    
+        
+
+
+
+            
+        #print f
+        #print len(h)
+        #CF.append(h)
+        #CF.append(min(h))
+    #print CF[0:1]
+    #return CF
+
+def CalculationCPF(CF):
+   
+    CPF_all = []
+    F_perimg = []
+    for i in range(len(TrainFILE)):
+        F = []
+        for j in CF:
+            F.append(j[i])
+        #print F
+        #print len(F)
+        F_perimg.append(F)
+    #print F_perimg[2:3]
+    #print len(F_perimg)
+        
+    for i in F_perimg[:]:
+        CPF = []
+        for j,k in zip(i,range(len(i)-1)):
+            for g in i[k+1:]:
+                CPF.append(j+g)
+                CPF.append(j*g)
+        #print CPF
+        CPF_all.append(CPF)
+    #print len(CPF_all)
+    #print CPF_all[2:3]
+    return CPF_all
+
+
+def CompHist(poslut ,neglut ,ob_LEARN ,number ,cpf_LEARN):
+    sump = sumn = 0.0
+    poslut = np.zeros(64)
+    neglut = np.zeros(64)
+    for i in range(BIN):
+        poslut[i] = 0.0
+        neglut[i] = 0.0
+    for i in range(len(CPF)):
+        #print ob_LEARN.m_feature[i][number]
+        tmp = int(ob_LEARN.m_feature[i][number] * BIN)
+        #print tmp
+        #tmp = int(ob_LEARN.m_feature[i][number])
+        if tmp >= BIN:
+            tmp = tmp % BIN
+        if tmp <= -BIN:
+            tmp = tmp % BIN
+        #print tmp
+        if i < len(TrainPOS):
+            poslut[tmp] += cpf_LEARN.m_weight[i]
+        else :
+            neglut[tmp] += cpf_LEARN.m_weight[i]                 
+    SmoothingLUT(poslut ,neglut)
+    for i in range(BIN):
+        sump += poslut[i]
+        sumn += neglut[i]
+    for i in range(BIN):
+        poslut[i] = poslut[i]/sump
+        neglut[i] = neglut[i]/sumn
+    #print poslut,neglut
+    return poslut,neglut
+    
+def WeakClassifier(CPF,ob_LEARN,poslut ,neglut,cl,cpf_LEARN):
+    minerror = 1000.0
+    number = 0
+    e =[]
+    for i in CPF[:]:
+        descriptor = i
+        ob_LEARN.m_feature.append(descriptor)
+        #print ob_LEARN.m_feature
+
+    #for i in range(len(CPF)):
+        #ob_LEARN.m_weight.append(1.0/(len(CPF)))
+        
+    for i in range(CPFFEATURE):
+        ob_LEARN.poslut ,ob_LEARN.neglut = CompHist(ob_LEARN.poslut ,ob_LEARN.neglut ,ob_LEARN ,i ,cpf_LEARN)
+        #print ob_LEARN.poslut ,ob_LEARN.neglut
+        z = AssessedValue(ob_LEARN.poslut, ob_LEARN.neglut)
+        e.append(z)
+        #print z
+        
+    key = range(CPFFEATURE)
+    value = e
+    d = dict(zip(key,value))
+    alpha = sorted(d.iteritems(),key=lambda d:d[1],reverse=False)[0:30]
+    #print alpha
+    number = alpha[0][0]
+    minerror = alpha[0][1]
+    
+    print number        
+    cl.number.append(number)
+
+def Prediction(number,count,poslut,neglut,ob_LEARN):
+    tmp = int(ob_LEARN.m_feature[count][number] * BIN)
+    #tmp = int(ob_LEARN.m_feature[count][number])
+    if tmp >= BIN:
+        tmp = tmp % BIN
+    if tmp <= -BIN:
+        tmp = tmp % BIN
+    h = 0.5 * math.log((poslut[tmp] + EPSILON)/(neglut[tmp] + EPSILON))
+    return h
+
+def DataWeightUpdate(number,CPF,ob_LEARN,cpf_LEARN):
+    all_weight = 0.0
+    for i in range(len(CPF)):
+        c = Prediction(number,i,ob_LEARN.poslut,ob_LEARN.neglut,ob_LEARN)
+        #print c
+        if i < len(TrainPOS):
+            cpf_LEARN.m_weight[i] = cpf_LEARN.m_weight[i] * math.exp(-c)
+        else:
+            cpf_LEARN.m_weight[i] = cpf_LEARN.m_weight[i] * math.exp(c)
+        all_weight += cpf_LEARN.m_weight[i]
+    for i in range(len(CPF)):
+        cpf_LEARN.m_weight[i] = cpf_LEARN.m_weight[i] / all_weight 
+    print cpf_LEARN.m_weight[2],cpf_LEARN.m_weight[900]
+
+
+def TestPrediction(number,count,poslut,neglut,ob_LEARN,cl):
+
+    tmp = int(ob_LEARN.m_feature[count][cl.number[number]] * BIN)
+    #tmp = int(ob_LEARN.m_feature[count][cl.number[number]])
+    if tmp >= BIN:
+        tmp = tmp % BIN
+    if tmp <= -BIN:
+        tmp = tmp % BIN
+    h = 0.5 * math.log((poslut[tmp] + EPSILON)/(neglut[tmp] + EPSILON))
+    return h   
+def ClassifierTest(Round,cpf_LAERN,ob_LEARN):
+    
+    fcount = 0.0
+    pcount = 0.0
+    
+    for i in range(len(TestFILE)):
+        p = 0.0
+        for j in range(Round+1):
+            
+            p += TestPrediction(j,i,ob_LEARN.poslut,ob_LEARN.neglut,ob_LEARN,cl)
+        #print p
+         
+        if p >= TH :
+            if i < len(TestPOS):
+                pcount += 1
+            else :
+                fcount += 1
+    #print pcount
+    pr = pcount/len(TestPOS)
+    fpr = fcount/len(TestNEG)
+
+    print ("Ture positive : %f  False postive :%f "%(pr,fpr))
+    return pr,fpr
+
+
+if __name__ =="__main__":
+        
+
+    cl = Classifier()
+    ob_LEARN = Learning()
+    cpf_LEARN = CPF_Learning()
+    TPR = []
+    FPR = []
+
+    HOGRATE = []
+    LBPHOGRATE = []
+
+    TrainPOS = TRAINPOS(HOGPOS,LBPHOGPOS)
+    #print len(TrainPOS)
+    TrainNEG = TRAINNEG(HOGTrainNeg,LBPHOGTrainNeg)
+    #print len(TrainNEG)
+    TrainFILE =TRAINFILE(TrainPOS,TrainNEG)
+    #print len(TrainFILE)
+    
+    TestPOS = TESTPOS(HOGPOS,LBPHOGPOS)
+    #print len(TestPOS)
+    TestNEG = TESTNEG(HOGTestNeg,LBPHOGTestNeg)
+    #print len(TestNEG)
+    TestFILE = TESTFILE(TestPOS,TestNEG)
+    #print len(TestFILE)
+    
+   
+
+    
+    for i in TrainFILE[:]:
+        descriptor = i
+        cpf_LEARN.m_feature.append(descriptor)
+        #print cpf_LEARN.m_feature
+               
+    DataWeightInit(cpf_LEARN)
+    
+    #RealAdaBoost
+    CPF_ALL = []
+    for Round in range(LEARNING_NUM):
+        print ("Round : %d\n"%(Round+1))
+
+        #Calculation CPF   
+       
+        CF = SelectCF(cpf_LEARN,cpf_LEARN.Poslut,cpf_LEARN.Neglut)
+        #print CF
+        
+        #CPF = CalculationCPF(CF)
+        #print CPF
+        
+        #CPF_ALL.append(CPF)
+        #print CPF_ALL
+        """
+        WeakClassifier(CPF,ob_LEARN,ob_LEARN.poslut,ob_LEARN.neglut,cl,cpf_LEARN)
+
+        #print CPF_ALL[Round][1]
+        
+        DataWeightUpdate(cl.number[Round],CPF,ob_LEARN,cpf_LEARN)
+       
+        pcount,fcount = ClassifierTest(Round,cpf_LEARN,ob_LEARN)
+
+        TPR.append(pcount)
+        
+        FPR.append(fcount)
+    
+    np.save('/home/yingyingli/code/CPF/RATE1/HOG-TPR.npy',TPR)
+    np.save('/home/yingyingli/code/CPF/RATE1/HOG-FPR.npy',FPR)
+    
+    """
+end = time.clock()
+print('Running time:%s Seconds'%(end-start))
