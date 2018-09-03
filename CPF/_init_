@@ -1,0 +1,139 @@
+import numpy as np
+import scipy
+
+OUTPUT_DIR = '/home/yingyingli/paper2/code/CPF/Outdate/'
+FEATURE = 3780
+elefeature = 200
+CPFFEATURE = 39800
+LEARNING_NUM = 300
+
+#File_NUM = 6696
+#TrainPOS_NUM = 1248
+#TrainNEG_NUM = 3648
+
+#TestPOS_NUM =  600
+#TestNEG_NUM =  1200
+
+EPSILON = 0.0000000001
+BIN = 64
+POS = 1
+NEG = 0
+TH = 0.0
+
+class Classifier():
+    def __init__(self):
+        self.number = []
+        self.z = 0
+
+
+class Learning():
+    def __init__(self):
+        self.m_feature = []
+        self.m_weight = []
+
+        self.m_number = []
+        self.poslut = np.zeros(64)
+        self.neglut = np.zeros(64)
+
+class CPF_Learning():
+    def __init__(self):
+        self.m_feature = []
+        self.m_weight = []
+
+        self.m_number = []
+        self.Poslut = np.zeros(64)
+        self.Neglut = np.zeros(64)
+
+
+HOGPOS = np.load("/home/yingyingli/paper2/code/Pool/HOGPOS.npy")
+#print len(HOGPOS)
+
+LBPHOGPOS = np.load("/home/yingyingli/paper2/code/Pool/LBPHOGPOS.npy")
+#print len(LBPHOGPOS)
+
+
+HOGTrainNeg = np.load("/home/yingyingli/paper2/code/Pool/HOGTrainNeg.npy")
+#print len(HOGTrainNeg)
+
+LBPHOGTrainNeg = np.load("/home/yingyingli/paper2/code/Pool/LBPHOGTrainNeg.npy")
+#print len(LBPHOGTrainNeg)
+
+
+HOGTestNeg = np.load("/home/yingyingli/paper2/code/Pool/HOGTestNeg.npy")
+#print len(HOGTestNeg)
+
+LBPHOGTestNeg = np.load("/home/yingyingli/paper2/code/Pool/LBPHOGTestNeg.npy")
+#print len(LBPHOGTestNeg)
+
+
+
+
+def TRAINPOS(HOGPOS,LBPHOGPOS):
+    TrainFile = []
+    
+    for a in HOGPOS[:624]:
+        TrainFile.append(a)
+    
+    
+    for b in LBPHOGPOS[:624]:
+        TrainFile.append(b)
+    #print len(TrainFile)
+    return TrainFile   
+def TRAINNEG(HOGTrainNeg,LBPHOGTrainNeg):
+    TrainFile1 = []
+    
+    for a in HOGTrainNeg[:]:
+        TrainFile1.append(a)
+    
+    for b in LBPHOGTrainNeg[:]:
+        TrainFile1.append(b)
+
+    #print len(TrainFile1)
+    return TrainFile1
+
+def TRAINFILE(TRAINPOS,TRAINNEG):
+    TRAINFILE = []
+    #print len(TRAINPOS)
+    #print len(TRAINNEG)
+    for i in TRAINPOS:
+        TRAINFILE.append(i)
+    for j in TRAINNEG:
+        TRAINFILE.append(j)
+    #print len(TRAINFILE)
+    return TRAINFILE
+    
+
+
+def TESTPOS(HOGPOS,LBPHOGPOS):
+    TestFile = []
+    
+    
+    for d in HOGPOS[624:]:
+        TestFile.append(d)
+   
+    
+    for e in LBPHOGPOS[624:]:
+        TestFile.append(e)
+  
+   
+    return TestFile   
+def TESTNEG(HOGTestNeg,LBPHOGTestNeg):
+    TestFile1 = []
+    for d in HOGTestNeg[:]:
+        TestFile1.append(d) 
+    for b in LBPHOGTestNeg[:]:
+        TestFile1.append(b)
+
+    
+    return TestFile1
+
+def TESTFILE(TESTPOS,TESTNEG):
+    TESTFile = []
+    for i in TESTPOS:
+        TESTFile.append(i)
+    for j in TESTNEG:
+        TESTFile.append(j)
+    #print len(TESTFile)
+    return TESTFile
+  
+
