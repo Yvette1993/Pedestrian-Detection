@@ -1,0 +1,7 @@
+Name: Adaboost_***.py
+
+Function: you will get the discrete and real Adaboost curve.
+
+Usage: Firstly, you need input the 'Path' of the image data which is through PCA. 
+      Secondly, you can change the color, shape and so on.
+      Finally, you will get the curve of the image.
