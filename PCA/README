@@ -1,0 +1,8 @@
+Name:PCA.py
+
+Function: Principal components analysis is used to reduce the dimension of data.
+
+Usage: Firstly, you need input the 'Path' of the image data. 
+       Secondly, you can change the dimension which you want.
+       Finally, you will get the PCA.
+
