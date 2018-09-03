@@ -1,0 +1,129 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import zero_one_loss
+from sklearn.ensemble import AdaBoostClassifier
+
+#LBP-Adaboost
+def load_datesets(TrainPos,TrainNeg, TestPos,TestNeg):
+    
+    datesets = []
+    for i in TrainPos[:]:
+        datesets.append(i)
+    for j in TrainNeg[:]:
+        datesets.append(j)
+    for k in TestPos[:]:
+        datesets.append(k)
+    for w in TestNeg[:]:
+        datesets.append(w)
+        
+    classlabels = [[1.0,]*len(TrainPos) + [-1.0,]* len(TrainNeg)+[1.0,]*len(TestPos)+[-1.0,]*len(TestNeg)]
+ 
+    datesets = np.asarray(datesets)
+    #print np.mat(datesets).shape,np.ravel(classlabels).shape
+    return np.mat(datesets), np.ravel(classlabels)
+ 
+   
+
+def Adaboost(datesets, classlabels,TrainPos,TrainNeg):
+    n_estimators = 900
+    # A learning rate of 1. may not be optimal for both SAMME and SAMME.R
+    learning_rate = 1.
+
+    X,y = datesets, classlabels
+    #y = column_or_1d(y,warn=ture)
+    #print X.shape,y.shape
+    
+    X_train, y_train = X[:len(TrainPos)+len(TrainNeg)], y[:len(TrainPos)+len(TrainNeg)]
+    X_test, y_test = X[len(TrainPos)+len(TrainNeg):], y[len(TrainPos)+len(TrainNeg):]
+    #print X_test.shape,y_test.shape
+
+
+    dt_stump = DecisionTreeClassifier(max_depth=1, min_samples_leaf=1)
+    dt_stump.fit(X_train, y_train)
+    dt_stump_err = 1.0 - dt_stump.score(X_test, y_test)
+
+    dt = DecisionTreeClassifier(max_depth=9, min_samples_leaf=1)
+    dt.fit(X_train, y_train)
+    dt_err = 1.0 - dt.score(X_test, y_test)
+    
+    ada_discrete = AdaBoostClassifier(
+        base_estimator=dt_stump,
+        learning_rate=learning_rate,
+        n_estimators=n_estimators,
+        algorithm="SAMME")
+    ada_discrete.fit(X_train, y_train)
+    
+    ada_real = AdaBoostClassifier(
+        base_estimator=dt_stump,
+        learning_rate=learning_rate,
+        n_estimators=n_estimators,
+        algorithm="SAMME.R")
+    ada_real.fit(X_train, y_train)
+
+    fig = plt.figure()
+   
+    ax = fig.add_subplot(111)
+    #plt.title('(MIT)LBP-Adaboost')
+    plt.title('(INRIA)LBP-Adaboost')
+    
+    ax.plot([1, n_estimators], [dt_stump_err] * 2, 'k-',
+            label='Decision Stump Error')
+    ax.plot([1, n_estimators], [dt_err] * 2, 'k--',
+            label='Decision Tree Error')
+
+    ada_discrete_err = np.zeros((n_estimators,))
+    for i, y_pred in enumerate(ada_discrete.staged_predict(X_test)):
+        ada_discrete_err[i] = zero_one_loss(y_pred, y_test)
+
+    ada_discrete_err_train = np.zeros((n_estimators,))
+    for i, y_pred in enumerate(ada_discrete.staged_predict(X_train)):
+        ada_discrete_err_train[i] = zero_one_loss(y_pred, y_train)
+
+    ada_real_err = np.zeros((n_estimators,))
+    for i, y_pred in enumerate(ada_real.staged_predict(X_test)):
+        ada_real_err[i] = zero_one_loss(y_pred, y_test)
+
+    ada_real_err_train = np.zeros((n_estimators,))
+    for i, y_pred in enumerate(ada_real.staged_predict(X_train)):
+        ada_real_err_train[i] = zero_one_loss(y_pred, y_train)
+
+    ax.plot(np.arange(n_estimators) + 1, ada_discrete_err,'*--',
+        label='Discrete AdaBoost Test Error',
+        color='red')
+    ax.plot(np.arange(n_estimators) + 1, ada_discrete_err_train,'D--',
+        label='Discrete AdaBoost Train Error',
+        color='blue')
+    ax.plot(np.arange(n_estimators) + 1, ada_real_err,'v--',
+        label='Real AdaBoost Test Error',
+        color='orange')
+    ax.plot(np.arange(n_estimators) + 1, ada_real_err_train,'x--',
+        label='Real AdaBoost Train Error',
+        color='green')
+
+    ax.set_ylim((0.0, 0.5))
+    ax.set_xlabel('n_estimators')
+    ax.set_ylabel('error rate')
+
+    leg = ax.legend(loc='upper right', fancybox=True)
+    leg.get_frame().set_alpha(0.7)
+
+    plt.show()
+
+
+if __name__ =="__main__":
+    """
+    TrainPos = np.load("/home/yingyingli/paper2/code/PCA/LBPHOG_TrainPosPCA.npy")
+    TrainNeg = np.load("/home/yingyingli/paper2/code/PCA/LBPHOG_TrainNegPCA.npy")
+    TestPos =  np.load("/home/yingyingli/paper2/code/PCA/LBPHOG_TestPosPCA.npy")
+    TestNeg = np.load("/home/yingyingli/paper2/code/PCA/LBPHOG_TestNegPCA.npy")
+    """
+    TrainPos = np.load("/home/yingyingli/paper2/code/PCA/INRIALBPTrainPos_PCA.npy")
+    TrainNeg = np.load("/home/yingyingli/paper2/code/PCA/INRIALBPTrainNeg_PCA.npy")
+    TestPos =  np.load("/home/yingyingli/paper2/code/PCA/INRIALBP_TestPosPCA.npy")
+    TestNeg = np.load("/home/yingyingli/paper2/code/PCA/INRIALBP_TestNegPCA.npy")
+    
+    datesets, classlabels = load_datesets(TrainPos,TrainNeg, TestPos,TestNeg)
+
+    Adaboost(datesets, classlabels,TrainPos,TrainNeg)
