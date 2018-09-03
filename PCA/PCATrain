@@ -1,0 +1,86 @@
+from numpy import *
+import numpy as np
+import matplotlib.pyplot as plt
+import time
+start = time.clock()
+
+def pca(X):
+    
+    num_data,dim = X.shape
+    mean_X = X.mean(axis=0)
+    X = X - mean_X
+    
+    if dim>num_data:
+ 
+        M = dot(X,X.T) 
+        e,EV = linalg.eigh(M) 
+        tmp = dot(X.T,EV).T 
+        V = tmp[::-1] 
+        S = sqrt(e)[::-1] 
+        for i in range(V.shape[1]):
+            V[:,i] /= S
+    else:
+        #using SVD
+        U,S,V = np.linalg.svd(X,full_matrices = False)
+        V = V[:num_data]  
+
+    
+    return V,S,mean_X
+
+#HOG PCA
+if __name__ =="__main__":
+    """
+    HogPosfeature = np.load('/home/yingyingli/paper2/code/Pool/HOGPOS.npy')
+    
+    lst =[]
+    for features in HogPosfeature[:624]:
+        
+        V,S,m = pca(features)
+        V = V[:200]
+        feature = array([dot(V,f-m) for f in features])
+        lst.append(feature[:200,:])
+     
+    PCAHog_Posfeature = np.save('/home/yingyingli/paper2/code/PCA/MITHOGTrainPos_PCA.npy',lst)
+    
+    
+    HogNegfeature = np.load('/home/yingyingli/paper2/code/Pool/HOGTrainNeg.npy')
+    lst1 =[]
+    for features in HogNegfeature[:]:
+       
+        V,S,m = pca(features)
+        V = V[:200]
+        feature = array([dot(V,f-m) for f in features])
+        lst1.append(feature[:200,:])
+    PCAHog_Negfeature = np.save('/home/yingyingli/paper2/code/PCA/MITHOGTrainNeg_PCA.npy',lst1)
+    """
+    
+#LBP-HOG PCA
+
+    LBPTrainPos = np.load('/home/yingyingli/paper2/code/Pool/INRIA-LBPTRAINPOS2.npy')
+
+    
+    lst2 =[]
+    for features in LBPTrainPos[:]:
+       
+        V,S,m = pca(features)
+        V = V[:200]
+        feature = array([dot(V,f-m) for f in features])
+        lst2.append(feature[:200,:])
+    LBP_Posfeature = np.save('/home/yingyingli/paper2/code/PCA/INRIALBPTrainPos_PCA.npy',lst2)
+
+    LBPTrainNeg = np.load('/home/yingyingli/paper2/code/Pool/INRIA-LBPTRAINNEG2.npy')
+    #print len(LBPTrainNeg)
+    lst3 =[]
+    for features in LBPTrainNeg[:]:
+        
+        V,S,m = pca(features)
+        V = V[:200]
+        feature = array([dot(V,f-m) for f in features])
+        lst3.append(feature[:200,:])
+    LBP_Negfeature = np.save('/home/yingyingli/paper2/code/PCA/INRIALBPTrainNeg_PCA.npy',lst3)
+    
+
+    
+
+end = time.clock()
+print('Running time:%s Seconds'%(end-start))
