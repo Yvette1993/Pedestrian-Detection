@@ -1,0 +1,79 @@
+from PIL import Image
+from numpy import *
+import numpy as np
+import time
+start = time.clock()
+
+def pca(X):
+ 
+    num_data,dim = X.shape
+    mean_X = X.mean(axis=0)
+    X = X - mean_X
+    
+    if dim>num_data:
+ 
+        M = dot(X,X.T) 
+        e,EV = linalg.eigh(M) 
+        tmp = dot(X.T,EV).T 
+        V = tmp[::-1] 
+        S = sqrt(e)[::-1] 
+        for i in range(V.shape[1]):
+            V[:,i] /= S
+    else:
+        #using SVD 
+        U,S,V = linalg.svd(X)
+        V = V[:num_data]  
+
+
+    return V,S,mean_X
+
+#HOG PCA
+"""
+HogPosfeature = np.load('/home/yingyingli/paper2/code/Pool/HOGPOS.npy')
+lst =[]
+for features in HogPosfeature[624:]:
+   
+    V,S,m = pca(features)
+    V = V[:200]
+    feature = array([dot(V,f-m) for f in features])
+    #print feature[:200,:].shape
+    lst.append(feature[:200,:])
+PCAHog_Posfeature = np.save('/home/yingyingli/paper2/code/PCA/Hog_TestPosPCA.npy',lst)
+
+
+HogNegfeature = np.load('/home/yingyingli/paper2/code/Pool/HOGTestNeg.npy')
+lst1 =[]
+for features in HogNegfeature[:]:
+    
+    V,S,m = pca(features)
+    V = V[:200]
+    feature = array([dot(V,f-m) for f in features])
+    lst1.append(feature[:200,:])
+PCAHog_Negfeature = np.save('/home/yingyingli/paper2/code/PCA/Hog_TestNegPCA.npy',lst1)
+
+"""
+#LBP-HOG PCA
+
+LBPTestPos = np.load('/home/yingyingli/paper2/code/Pool/INRIA-LBPTESTPOS2.npy')
+lst2 =[]
+for features in LBPTestPos[624:]:
+    
+    V,S,m = pca(features)
+    V = V[:200]
+    feature = array([dot(V,f-m) for f in features])
+    lst2.append(feature[:200,:])
+LBP_Posfeature = np.save('/home/yingyingli/paper2/code/PCA/INRIALBP_TestPosPCA.npy',lst2)
+
+LBPTestNeg = np.load('/home/yingyingli/paper2/code/Pool/INRIA-LBPTESTNEG2.npy')
+lst3 =[]
+for features in LBPTestNeg[:]:
+    
+    V,S,m = pca(features)
+    V = V[:200]
+    feature = array([dot(V,f-m) for f in features])
+    lst3.append(feature[:200,:])
+LBP_Negfeature = np.save('/home/yingyingli/paper2/code/PCA/INRIALBP_TestNegPCA.npy',lst3)
+
+
+end = time.clock()
+print('Running time:%s Seconds'%(end-start))
