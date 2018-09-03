@@ -1,0 +1,16 @@
+Name:_init_.py
+
+Function: Setting the original data.
+
+Usage: you can change the data which you want.
+
+
+
+
+Name: CPF.py
+
+Function: you can get Co-occurrence probability feature.
+
+Usage: Firstly, you need adjustment the '_init_.py'.
+       Finally, you will get the 'TPR' and 'FPR'.
+      
